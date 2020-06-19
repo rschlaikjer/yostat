@@ -1,16 +1,9 @@
 #pragma once
 
-#include <iostream>
 #include <map>
 #include <set>
 #include <string>
 #include <vector>
-
-static std::set<std::string> ECP5_PRIMITIVES = {
-    "CCU2C",      "LUT2",   "LUT4",       "PFUMX",   "L6MUX21",
-    "TRELLIS_FF", "DP16KD", "MULT18X18D", "$_TBUF_", "TRELLIS_DPR16X4",
-    "EHXPLLL",
-};
 
 struct YosysModule {
   // Basic struct for tracking some data we pull from the yosys output json for
@@ -26,7 +19,7 @@ struct YosysModule {
     }
     cell_counts[celltype] = cell_counts[celltype] + 1;
   }
-  bool all_cells_are_primitives();
+  bool all_cells_are_primitives(std::set<std::string> primitive_names);
 };
 
 // One element in the data view control.
@@ -82,6 +75,7 @@ struct Module {
 
 // Recursive generator for Module tree
 Module *generate_module_tree(std::map<std::string, YosysModule> modules,
+                             std::set<std::string> primitive_names,
                              Module *parent, std::string module_name);
 // Module tree destructor
 void delete_module_tree(Module *m);
