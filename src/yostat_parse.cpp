@@ -26,11 +26,22 @@ Design *read_json(std::string path) {
   std::set<std::string> device_primitives = unique_primitives_in_design(j);
 
   // Now pull out all our useful data
+  std::string top_module = "top";
   std::map<std::string, YosysModule> modules;
   for (auto module_it = j["modules"].begin(); module_it != j["modules"].end();
        ++module_it) {
+    // Create a struct for this module
     YosysModule mod;
     mod.name = module_it.key();
+
+    // Check if this is the top module?
+    auto &attributes = module_it.value()["attributes"];
+    auto attr_top = attributes.find("top");
+    if (attr_top != attributes.end()) {
+      top_module = mod.name;
+    }
+
+    // Load the number of cells used by the module
     auto &cells = module_it.value()["cells"];
     for (auto cells_it = cells.begin(); cells_it != cells.end(); ++cells_it) {
       mod.increment_celltype(cells_it.value()["type"]);
@@ -39,7 +50,7 @@ Design *read_json(std::string path) {
   }
 
   Module *tree =
-      generate_module_tree(modules, device_primitives, nullptr, "top");
+      generate_module_tree(modules, device_primitives, nullptr, top_module);
   Design *d = new Design;
   d->top = tree;
   d->primitives = unique_primitives_in_tree(tree);
