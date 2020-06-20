@@ -191,7 +191,7 @@ YostatWxPanel::YostatWxPanel(std::string filename, Design *design)
   _datamodel->DecRef();
 
   // Generate display columns
-  create_columns_for_design(design);
+  create_columns_for_design(design, /*sort*/ true);
 
   // Add a menu bar
   wxMenuBar *menubar = new wxMenuBar();
@@ -209,7 +209,7 @@ YostatWxPanel::YostatWxPanel(std::string filename, Design *design)
   parent->SetAutoLayout(true);
 }
 
-void YostatWxPanel::create_columns_for_design(Design *design) {
+void YostatWxPanel::create_columns_for_design(Design *design, bool sort) {
   // Create the first column, which is the module names
   wxDataViewTextRenderer *string_renderer =
       new wxDataViewTextRenderer("string", wxDATAVIEW_CELL_ACTIVATABLE);
@@ -231,8 +231,10 @@ void YostatWxPanel::create_columns_for_design(Design *design) {
   }
 
   // Order by module name initially
-  col_module->SetSortOrder(true);
-  _datamodel->Resort();
+  if (sort) {
+    col_module->SetSortOrder(true);
+    _datamodel->Resort();
+  }
 }
 
 void YostatWxPanel::reload(wxCommandEvent &evt) {
@@ -258,7 +260,7 @@ void YostatWxPanel::reload(wxCommandEvent &evt) {
   _datamodel->set_design(d);
 
   // Regenerate the dataview columns to match the new primitive data
-  create_columns_for_design(d);
+  create_columns_for_design(d, /*sort*/ false);
 
   // Re-apply the sort if possible
   if (sorted_by_primitive) {
@@ -267,11 +269,13 @@ void YostatWxPanel::reload(wxCommandEvent &evt) {
       if (sort_primitive == d->primitives[i]) {
         // Matched, sory by this colindex
         _dataview->GetColumn(i + 1)->SetSortOrder(sort_order);
-        _datamodel->Resort();
         break;
       }
     }
+  } else {
+    _dataview->GetColumn(0)->SetSortOrder(sort_order);
   }
+  _datamodel->Resort();
 
   GetStatusBar()->SetStatusText("Done");
 }

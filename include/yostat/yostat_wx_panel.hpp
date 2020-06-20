@@ -35,7 +35,7 @@ public:
   YostatWxPanel(std::string filename, Design *d);
   DECLARE_EVENT_TABLE();
 
-  void create_columns_for_design(Design *design);
+  void create_columns_for_design(Design *design, bool sort);
   void on_dataview_item_activated(wxDataViewEvent &evt);
   void reload(wxCommandEvent &evt);
 
