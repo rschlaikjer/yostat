@@ -127,8 +127,12 @@ Module *generate_module_tree(std::map<std::string, YosysModule> modules,
   Module *mod = new Module(parent, module_name);
 
   // In order to differentiate logic used by a module and logic used by
-  // submodules of that module, create a special 'self' submodule
-  Module *mod_self_primitives = new Module(mod, " (self)");
+  // submodules of that module, create a special 'self' submodule for modules
+  // that do not consist entirely of primitives
+  Module *mod_self_primitives = nullptr;
+  if (!yosys_mod.all_cells_are_primitives(primitive_names)) {
+    mod_self_primitives = new Module(mod, " (self)");
+  }
 
   // For each cell this module contains, recurse to build them out
   for (auto &cell : yosys_mod.cell_counts) {
@@ -160,7 +164,11 @@ Module *generate_module_tree(std::map<std::string, YosysModule> modules,
       }
     } else {
       // If it is a primitive, just update the counter for it
-      mod_self_primitives->set_primitive_count(cell.first, cell.second);
+      if (mod_self_primitives) {
+        mod_self_primitives->set_primitive_count(cell.first, cell.second);
+      } else {
+        mod->set_primitive_count(cell.first, cell.second);
+      }
     }
   }
 

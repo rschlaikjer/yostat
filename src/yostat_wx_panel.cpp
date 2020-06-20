@@ -39,7 +39,9 @@ bool YostatDataModel::IsContainer(const wxDataViewItem &item) const {
   if (!node) {
     return true;
   }
-  return node->submodules.size() > 0;
+  // To work around some strange wx behaviour, lie and say that everything is a
+  // container
+  return true;
 }
 
 wxDataViewItem YostatDataModel::GetParent(const wxDataViewItem &item) const {
