@@ -8,9 +8,10 @@
 class YostatDataModel : public wxDataViewModel {
 public:
   YostatDataModel(Design *d) : _design(d) {}
+  ~YostatDataModel();
 
+  /* wxDataViewModel overrides */
   bool HasContainerColumns(const wxDataViewItem &item) const override;
-
   bool IsContainer(const wxDataViewItem &item) const override;
   wxDataViewItem GetParent(const wxDataViewItem &item) const override;
   unsigned int GetColumnCount() const override;
@@ -21,7 +22,8 @@ public:
                 unsigned int col) const;
   bool SetValue(const wxVariant &variant, const wxDataViewItem &item,
                 unsigned int col);
-  ~YostatDataModel();
+
+  void set_design(Design *d);
 
 private:
   Design *_design;

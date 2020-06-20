@@ -1,3 +1,4 @@
+#include <functional>
 #include <map>
 #include <string>
 #include <vector>
@@ -94,6 +95,79 @@ bool YostatDataModel::SetValue(const wxVariant &variant,
   return false;
 }
 
+void YostatDataModel::set_design(Design *d) {
+  // Need to iteratively compare new design and old design and try to update in
+  // place as much as possible to preserve current view state
+  std::function<void(Module *, Module *)> update_module = [&](Module *m_old,
+                                                              Module *m_new) {
+    // Update the name and primitive counts directly
+    m_old->name = m_new->name;
+    m_old->primitives = m_new->primitives;
+
+    // For the submodules, there are three cases:
+    // - Submodule on m_new present on m_old
+    //  -> Recurse directly
+    // - Submodule on m_new not present on m_old
+    //  -> Detatch submodule from m_new and attach to m_old
+    // - Submodule on m_old not present on m_new
+    //  -> Delete submodule from m_old
+
+    // Take a copy of the old submodules
+    std::vector<Module *> old_submodules = m_old->submodules;
+    // Then clear the list so that we can readd as necessary
+    m_old->submodules.clear();
+    for (auto new_submodule : m_new->submodules) {
+
+      // Try and match this submodule against the old submodules list
+      bool did_update_in_place = false;
+      for (auto old_it = old_submodules.begin();
+           old_it != old_submodules.end();) {
+        if (new_submodule->name == (*old_it)->name) {
+          // Direct match. Add this module back to the submodule list, and
+          // recurse on it
+          Module *old_submodule = *old_it;
+          m_old->submodules.emplace_back(old_submodule);
+          update_module(old_submodule, new_submodule);
+          // Remove from the old_submodules list so we don't delete it later
+          old_it = old_submodules.erase(old_it);
+          // Notify that we changed this node
+          ItemChanged(wxDataViewItem(old_submodule));
+          did_update_in_place = true;
+          break;
+        } else {
+          ++old_it;
+        }
+      }
+
+      // If we didn't update in place, we need to just add this node
+      if (!did_update_in_place) {
+        // Add it to the submodule list
+        m_old->submodules.emplace_back(new_submodule);
+        // Reparent the module
+        new_submodule->parent = m_old;
+        // Notify wx about it
+        ItemAdded(wxDataViewItem(m_old), wxDataViewItem(new_submodule));
+        // Detach it from the input design
+        // TODO
+      }
+    }
+
+    // At this point, we've handled cases 1 and 2. For the final case we
+    // just need to take everything left in old_submodules that wasn't
+    // readded and tell wx it's gone
+    for (auto mod : old_submodules) {
+      ItemDeleted(wxDataViewItem(m_old), wxDataViewItem(mod));
+    }
+  };
+
+  // Module *const parent;
+  // const std::string name;
+  // std::map<std::string, int> primitives;
+  // std::vector<Module *> submodules;
+
+  update_module(_design->top, d->top);
+}
+
 YostatDataModel::~YostatDataModel() { delete _design; }
 
 YostatWxPanel::YostatWxPanel(std::string filename, Design *design)
@@ -168,9 +242,7 @@ void YostatWxPanel::reload(wxCommandEvent &evt) {
   _dataview->ClearColumns();
 
   // Create a model with the new data
-  _datamodel = new YostatDataModel(d);
-  _dataview->AssociateModel(_datamodel);
-  _datamodel->DecRef();
+  _datamodel->set_design(d);
 
   // Regenerate the dataview columns to match the new primitive data
   create_columns_for_design(d);

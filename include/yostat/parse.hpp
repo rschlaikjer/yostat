@@ -67,8 +67,8 @@ struct Module {
     }
   }
 
-  Module *const parent;
-  const std::string name;
+  Module *parent;
+  std::string name;
   std::map<std::string, int> primitives;
   std::vector<Module *> submodules;
 };
