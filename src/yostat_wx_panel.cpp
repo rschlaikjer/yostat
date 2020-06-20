@@ -95,6 +95,8 @@ bool YostatDataModel::SetValue(const wxVariant &variant,
   return false;
 }
 
+Design *YostatDataModel::get_design() { return _design; }
+
 void YostatDataModel::set_design(Design *d) {
   // Need to iteratively compare new design and old design and try to update in
   // place as much as possible to preserve current view state
@@ -238,6 +240,17 @@ void YostatWxPanel::reload(wxCommandEvent &evt) {
   GetStatusBar()->SetStatusText("Re-reading " + _filename);
   Design *d = read_json(_filename);
 
+  // Get the name of the column we were previously sorted by
+  wxDataViewColumn *sort_col = _dataview->GetSortingColumn();
+  const unsigned sort_col_idx = sort_col->GetModelColumn();
+  const bool sorted_by_primitive = sort_col_idx > 0;
+  const bool sort_order = sort_col->IsSortOrderAscending();
+  std::string sort_primitive;
+  if (sorted_by_primitive) {
+    // Get the name of the sort primitive so we can re-sort by it
+    sort_primitive = _datamodel->get_design()->primitives[sort_col_idx - 1];
+  }
+
   // Clear the display columns
   _dataview->ClearColumns();
 
@@ -246,5 +259,19 @@ void YostatWxPanel::reload(wxCommandEvent &evt) {
 
   // Regenerate the dataview columns to match the new primitive data
   create_columns_for_design(d);
+
+  // Re-apply the sort if possible
+  if (sorted_by_primitive) {
+    // Try and match the primitive to a new column index
+    for (unsigned i = 0; i < d->primitives.size(); i++) {
+      if (sort_primitive == d->primitives[i]) {
+        // Matched, sory by this colindex
+        _dataview->GetColumn(i + 1)->SetSortOrder(sort_order);
+        _datamodel->Resort();
+        break;
+      }
+    }
+  }
+
   GetStatusBar()->SetStatusText("Done");
 }

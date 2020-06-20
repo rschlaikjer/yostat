@@ -24,6 +24,7 @@ public:
                 unsigned int col);
 
   void set_design(Design *d);
+  Design *get_design();
 
 private:
   Design *_design;
