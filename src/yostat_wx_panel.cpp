@@ -2,9 +2,27 @@
 #include <string>
 #include <vector>
 
-#include <wx/dataview.h>
-
 #include <yostat/yostat_wx_panel.hpp>
+
+/* clang-format off */
+BEGIN_EVENT_TABLE(YostatWxPanel, wxFrame)
+EVT_DATAVIEW_ITEM_ACTIVATED(wxID_ANY, YostatWxPanel::on_dataview_item_activated)
+END_EVENT_TABLE()
+/* clang-format on */
+
+void YostatWxPanel::on_dataview_item_activated(wxDataViewEvent &evt) {
+  // On doubleclick / enter, toggle expansion of container items
+  wxDataViewItem item = evt.GetItem();
+  if (!item.IsOk())
+    return;
+  if (evt.GetModel()->IsContainer(item)) {
+    if (_dataview->IsExpanded(item)) {
+      _dataview->Collapse(item);
+    } else {
+      _dataview->Expand(item);
+    }
+  }
+}
 
 class YostatDataModel : public wxDataViewModel {
 public:
@@ -87,22 +105,22 @@ YostatWxPanel::YostatWxPanel(Design *d)
   wxBoxSizer *hbox = new wxBoxSizer(wxHORIZONTAL);
 
   // Create a dataview and add it to our sizer
-  wxDataViewCtrl *dataview =
+  _dataview =
       new wxDataViewCtrl(parent, wxID_ANY, wxPoint(-1, -1), wxSize(-1, -1));
-  hbox->Add(dataview, -1, wxEXPAND);
+  hbox->Add(_dataview, -1, wxEXPAND);
 
   // Create our data model using the parsed yosys design
   wxDataViewModel *cells_model = new YostatDataModel(d);
-  dataview->AssociateModel(cells_model);
+  _dataview->AssociateModel(cells_model);
   cells_model->DecRef();
 
   // Create the first column, which is the module names
   wxDataViewTextRenderer *string_renderer =
-      new wxDataViewTextRenderer("string", wxDATAVIEW_CELL_INERT);
+      new wxDataViewTextRenderer("string", wxDATAVIEW_CELL_ACTIVATABLE);
   wxDataViewColumn *col_module =
       new wxDataViewColumn("Module Name", string_renderer, 0, 300, wxALIGN_LEFT,
                            wxDATAVIEW_COL_SORTABLE | wxDATAVIEW_COL_RESIZABLE);
-  dataview->AppendColumn(col_module);
+  _dataview->AppendColumn(col_module);
 
   // Create each of the primitive columns
   int col = 1;
@@ -113,7 +131,7 @@ YostatWxPanel::YostatWxPanel(Design *d)
         cell, long_renderer, col++, 100, wxALIGN_LEFT,
         wxDATAVIEW_COL_SORTABLE | wxDATAVIEW_COL_RESIZABLE |
             wxDATAVIEW_COL_REORDERABLE);
-    dataview->AppendColumn(cell_col);
+    _dataview->AppendColumn(cell_col);
   }
 
   // Order by module name initially
