@@ -29,7 +29,7 @@ bool YostatApp::OnInit() {
   }
 
   // If we loaded it OK, display the data
-  _panel = new YostatWxPanel(d);
+  _panel = new YostatWxPanel(_json_file, d);
   _panel->Show(true);
   return true;
 }

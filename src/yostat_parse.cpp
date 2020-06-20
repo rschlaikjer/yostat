@@ -82,7 +82,6 @@ std::set<std::string> unique_primitives_in_design(nlohmann::json &j) {
     }
   }
 
-  fprintf(stderr, "Found %ld primitives\n", primitives.size());
   return primitives;
 }
 

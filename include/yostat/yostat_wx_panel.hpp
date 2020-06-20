@@ -5,13 +5,39 @@
 
 #include <yostat/parse.hpp>
 
-class YostatWxPanel : public wxFrame {
+class YostatDataModel : public wxDataViewModel {
 public:
-  YostatWxPanel(Design *d);
-  DECLARE_EVENT_TABLE();
+  YostatDataModel(Design *d) : _design(d) {}
 
-  void on_dataview_item_activated(wxDataViewEvent &evt);
+  bool HasContainerColumns(const wxDataViewItem &item) const override;
+
+  bool IsContainer(const wxDataViewItem &item) const override;
+  wxDataViewItem GetParent(const wxDataViewItem &item) const override;
+  unsigned int GetColumnCount() const override;
+  wxString GetColumnType(unsigned int col) const override;
+  unsigned int GetChildren(const wxDataViewItem &item,
+                           wxDataViewItemArray &children) const override;
+  void GetValue(wxVariant &variant, const wxDataViewItem &item,
+                unsigned int col) const;
+  bool SetValue(const wxVariant &variant, const wxDataViewItem &item,
+                unsigned int col);
+  ~YostatDataModel();
 
 private:
+  Design *_design;
+};
+
+class YostatWxPanel : public wxFrame {
+public:
+  YostatWxPanel(std::string filename, Design *d);
+  DECLARE_EVENT_TABLE();
+
+  void create_columns_for_design(Design *design);
+  void on_dataview_item_activated(wxDataViewEvent &evt);
+  void reload(wxCommandEvent &evt);
+
+private:
+  const std::string _filename;
   wxDataViewCtrl *_dataview;
+  YostatDataModel *_datamodel;
 };
