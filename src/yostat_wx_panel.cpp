@@ -118,7 +118,9 @@ void YostatDataModel::set_design(Design *d) {
     std::vector<Module *> old_submodules = m_old->submodules;
     // Then clear the list so that we can readd as necessary
     m_old->submodules.clear();
-    for (auto new_submodule : m_new->submodules) {
+    for (auto new_it = m_new->submodules.begin();
+         new_it != m_new->submodules.end();) {
+      Module *new_submodule = *new_it;
 
       // Try and match this submodule against the old submodules list
       bool did_update_in_place = false;
@@ -150,7 +152,9 @@ void YostatDataModel::set_design(Design *d) {
         // Notify wx about it
         ItemAdded(wxDataViewItem(m_old), wxDataViewItem(new_submodule));
         // Detach it from the input design
-        // TODO
+        new_it = m_new->submodules.erase(new_it);
+      } else {
+        ++new_it;
       }
     }
 
@@ -159,14 +163,11 @@ void YostatDataModel::set_design(Design *d) {
     // readded and tell wx it's gone
     for (auto mod : old_submodules) {
       ItemDeleted(wxDataViewItem(m_old), wxDataViewItem(mod));
+      delete_module_tree(mod);
     }
   };
 
-  // Module *const parent;
-  // const std::string name;
-  // std::map<std::string, int> primitives;
-  // std::vector<Module *> submodules;
-
+  // Recursively update
   update_module(_design->top, d->top);
 }
 
@@ -278,4 +279,7 @@ void YostatWxPanel::reload(wxCommandEvent &evt) {
   _datamodel->Resort();
 
   GetStatusBar()->SetStatusText("Done");
+
+  // Delete any parts of the new design that we didn't steal in set_design
+  delete d;
 }
