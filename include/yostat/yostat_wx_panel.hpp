@@ -13,6 +13,5 @@ public:
   void on_dataview_item_activated(wxDataViewEvent &evt);
 
 private:
-  Design *_design;
   wxDataViewCtrl *_dataview;
 };

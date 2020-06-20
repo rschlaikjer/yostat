@@ -93,12 +93,14 @@ public:
     return false;
   }
 
+  ~YostatDataModel() { delete _design; }
+
+private:
   Design *_design;
 };
 
-YostatWxPanel::YostatWxPanel(Design *d)
-    : wxFrame(nullptr, wxID_ANY, "Yostat", wxPoint(-1, -1), wxSize(-1, -1)),
-      _design(d) {
+YostatWxPanel::YostatWxPanel(Design *design)
+    : wxFrame(nullptr, wxID_ANY, "Yostat", wxPoint(-1, -1), wxSize(-1, -1)) {
 
   // Create a parent panel and sizer
   wxPanel *parent = new wxPanel(this, wxID_ANY);
@@ -110,7 +112,7 @@ YostatWxPanel::YostatWxPanel(Design *d)
   hbox->Add(_dataview, -1, wxEXPAND);
 
   // Create our data model using the parsed yosys design
-  wxDataViewModel *cells_model = new YostatDataModel(d);
+  wxDataViewModel *cells_model = new YostatDataModel(design);
   _dataview->AssociateModel(cells_model);
   cells_model->DecRef();
 
@@ -124,7 +126,7 @@ YostatWxPanel::YostatWxPanel(Design *d)
 
   // Create each of the primitive columns
   int col = 1;
-  for (auto &cell : d->primitives) {
+  for (auto &cell : design->primitives) {
     wxDataViewTextRenderer *long_renderer =
         new wxDataViewTextRenderer("long", wxDATAVIEW_CELL_INERT);
     wxDataViewColumn *cell_col = new wxDataViewColumn(
