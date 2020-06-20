@@ -1,8 +1,16 @@
 # Yostat
 
 Generate visible resource usage trees for yosys designs using the output JSON.
+Each output row shows the logic used by that row and all rows below it,
+allowing you to drill down on what parts of the design are using your logic
+resources.
+Columns can be dragged to rearrange and sorted to focus on the primitives you
+care most about.
 
 ![Screenshot](/img/yostat.png?raw=true)
+Example output for the
+[Hackaday Supercon](https://github.com/Spritetm/hadbadge2019_fpgasoc)
+badge gateware
 
 ### Usage
 
